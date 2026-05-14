@@ -2,75 +2,80 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // 🌙 MODO OSCURO MINIMALISTA (Estilo Threads/X)
+  // Colores Premium
+  static const Color primaryColor = Color(0xFF00F2FF); // Electric Cyan
+  static const Color secondaryColor = Color(0xFF6366F1); // Indigo
+  static const Color surfaceDark = Color(0xFF0F172A); // Slate 900
+  static const Color backgroundDark = Color(0xFF020617); // Slate 950
+
+  // 🌙 MODO OSCURO PREMIUM
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: Colors.black, // Fondo puro negro
+      scaffoldBackgroundColor: backgroundDark,
       colorScheme: const ColorScheme.dark(
-        primary: Colors.white, // Acento principal blanco
+        primary: primaryColor,
         onPrimary: Colors.black,
-        secondary: Color(0xFF1DA1F2), // Azul social (similar a X)
+        secondary: secondaryColor,
         onSecondary: Colors.white,
-        error: Color(0xFFFF3B30), // Rojo intenso estilo iOS para SOS
-        background: Colors.black,
-        surface: Color(0xFF121212), // Tarjetas gris muy oscuro
+        error: Color(0xFFFF3B30),
+        background: backgroundDark,
+        surface: surfaceDark,
         onSurface: Colors.white,
-        outline: Color(0xFF2C2C2C), // Bordes sutiles
+        outline: Color(0xFF1E293B),
       ),
       textTheme: _getTextTheme(),
       elevatedButtonTheme: _buttonTheme,
       inputDecorationTheme: _inputTheme(),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.black,
+        backgroundColor: backgroundDark.withValues(alpha: 0.8),
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.plusJakartaSans(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       cardTheme: CardThemeData(
-        color: const Color(0xFF1A1A1A), // Gris muy oscuro, pero resalta del negro
-        elevation: 4,
-        shadowColor: Colors.black45,
+        color: surfaceDark,
+        elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide.none, // Sin borde, pura sombra
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFF1E293B), width: 1),
         ),
       ),
     );
   }
 
-  // ☀️ MODO CLARO MINIMALISTA
+  // ☀️ MODO CLARO PREMIUM
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: Colors.white,
+      scaffoldBackgroundColor: const Color(0xFFF8FAFC),
       colorScheme: const ColorScheme.light(
         primary: Colors.black,
         onPrimary: Colors.white,
-        secondary: Color(0xFF1DA1F2),
+        secondary: secondaryColor,
         onSecondary: Colors.white,
         error: Color(0xFFFF3B30),
-        background: Colors.white,
+        background: Color(0xFFF8FAFC),
         surface: Colors.white,
         onSurface: Colors.black,
-        outline: Color(0xFFE5E5E5),
+        outline: Color(0xFFE2E8F0),
       ),
       textTheme: _getTextTheme(isDark: false),
       elevatedButtonTheme: _buttonTheme,
       inputDecorationTheme: _inputTheme(isDark: false),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF8FAFC).withValues(alpha: 0.8),
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.plusJakartaSans(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.bold,
           color: Colors.black,
         ),
         iconTheme: const IconThemeData(color: Colors.black),
@@ -78,26 +83,26 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: Colors.black.withValues(alpha: 0.05),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide.none,
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
       ),
     );
   }
 
   static TextTheme _getTextTheme({bool isDark = true}) {
-    final textColor = isDark ? Colors.white : Colors.black;
-    final secondaryColor = isDark ? const Color(0xFF71767B) : const Color(0xFF536471); // Grises estilo X
+    final textColor = isDark ? Colors.white : AppColors.slate.shade900;
+    final secondaryColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return TextTheme(
-      displayLarge: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: textColor, letterSpacing: -1),
-      headlineMedium: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: textColor, letterSpacing: -0.5),
-      bodyLarge: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w400, color: textColor, height: 1.4),
-      bodyMedium: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400, color: secondaryColor),
-      labelLarge: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: textColor),
+      displayLarge: GoogleFonts.plusJakartaSans(fontSize: 32, fontWeight: FontWeight.bold, color: textColor, letterSpacing: -1),
+      headlineMedium: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.bold, color: textColor, letterSpacing: -0.5),
+      bodyLarge: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w400, color: textColor, height: 1.5),
+      bodyMedium: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w400, color: secondaryColor),
+      labelLarge: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600, color: textColor, letterSpacing: 0.5),
     );
   }
 
@@ -105,21 +110,22 @@ class AppTheme {
     return ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), // Botones de píldora
-        minimumSize: const Size(double.infinity, 52), 
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        minimumSize: const Size(88, 48),
+        textStyle: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
 
   static InputDecorationTheme _inputTheme({bool isDark = true}) {
-    final borderColor = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE5E5E5);
-    final focusColor = isDark ? Colors.white : Colors.black;
-    final textColor = isDark ? Colors.white : Colors.black;
+    final borderColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+    final focusColor = isDark ? primaryColor : Colors.black;
+    final fillColor = isDark ? surfaceDark : Colors.white;
 
     return InputDecorationTheme(
       filled: true,
-      fillColor: Colors.transparent, // Inputs transparentes
+      fillColor: fillColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: borderColor, width: 1),
@@ -130,11 +136,30 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: focusColor, width: 2), // Borde más grueso al escribir
+        borderSide: BorderSide(color: focusColor, width: 2),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      labelStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w400, color: isDark ? const Color(0xFF71767B) : const Color(0xFF536471)),
-      floatingLabelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: focusColor),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      labelStyle: GoogleFonts.plusJakartaSans(fontSize: 14, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+      floatingLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: focusColor),
     );
   }
+}
+
+class AppColors {
+  static const MaterialColor slate = MaterialColor(
+    0xFF64748B,
+    <int, Color>{
+      50: Color(0xFFF8FAFC),
+      100: Color(0xFFF1F5F9),
+      200: Color(0xFFE2E8F0),
+      300: Color(0xFFCBD5E1),
+      400: Color(0xFF94A3B8),
+      500: Color(0xFF64748B),
+      600: Color(0xFF475569),
+      700: Color(0xFF334155),
+      800: Color(0xFF1E293B),
+      900: Color(0xFF0F172A),
+      950: Color(0xFF020617),
+    },
+  );
 }

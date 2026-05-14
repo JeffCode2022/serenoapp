@@ -8,6 +8,8 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'main_layout_screen.dart';
 import 'features/reportes/presentation/formulario_reporte_screen.dart';
+import 'features/muro/data/repositories/muro_repository.dart';
+import 'features/muro/presentation/bloc/muro_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +56,11 @@ class SerenazgoApp extends StatelessWidget {
       providers: [
         BlocProvider(
           create: (context) => AuthBloc(supabase: Supabase.instance.client)..add(CheckAuthStatus()),
+        ),
+        BlocProvider(
+          create: (context) => MuroBloc(
+            repository: MuroRepository(supabase: Supabase.instance.client),
+          )..add(LoadMuroPosts()),
         ),
       ],
       child: MaterialApp.router(

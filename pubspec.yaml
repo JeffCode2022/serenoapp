@@ -24,6 +24,8 @@ dependencies:
   google_fonts: ^6.1.0
   lucide_icons: ^0.257.0
   iconsax: ^0.0.8
+  image_picker: ^1.2.2
+  file_picker: ^11.0.2
 
 dev_dependencies:
   flutter_test:
@@ -34,3 +36,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/

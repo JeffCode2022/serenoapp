@@ -29,96 +29,185 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return BlocListener<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is AuthAuthenticated) {
-            context.go('/home');
-          } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(state.message), backgroundColor: Colors.red),
-            );
-          }
-        },
-        child: Scaffold(
-          body: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
+      listener: (context, state) {
+        if (state is AuthAuthenticated) {
+          context.go('/home');
+        } else if (state is AuthError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            // BACKGROUND DYNAMICS
+            Positioned(
+              top: -100,
+              right: -100,
+              child: _CircleBlur(color: theme.colorScheme.primary.withOpacity(0.15), size: 300),
+            ),
+            Positioned(
+              bottom: -50,
+              left: -50,
+              child: _CircleBlur(color: theme.colorScheme.secondary.withOpacity(0.1), size: 250),
+            ),
+            
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 40),
-                      // Logo minimalista
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(Iconsax.shield_tick, size: 30, color: theme.colorScheme.onPrimary),
-                      ),
-                      const SizedBox(height: 32),
+                      // LOGO & HEADER
+                      const _YouthfulHeader(),
+                      const SizedBox(height: 48),
+                      
+                      // FORM
                       Text(
-                        'Red Operativa',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.displayLarge,
+                        'DNI',
+                        style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary.withOpacity(0.8)),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'Ingresa para continuar',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 48),
                       TextField(
                         controller: _dniController,
                         keyboardType: TextInputType.number,
                         maxLength: 8,
-                        style: theme.textTheme.bodyLarge,
                         decoration: const InputDecoration(
-                          labelText: 'Número de DNI',
+                          hintText: 'Ingresa tu DNI',
                           counterText: '',
+                          prefixIcon: Icon(Iconsax.user, size: 20),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
+                      
+                      Text(
+                        'PIN DE SEGURIDAD',
+                        style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary.withOpacity(0.8)),
+                      ),
+                      const SizedBox(height: 8),
                       TextField(
                         controller: _pinController,
                         keyboardType: TextInputType.number,
                         obscureText: true,
                         maxLength: 6,
-                        style: theme.textTheme.bodyLarge,
                         decoration: const InputDecoration(
-                          labelText: 'PIN de Seguridad',
+                          hintText: '••••••',
                           counterText: '',
+                          prefixIcon: Icon(Iconsax.key, size: 20),
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 40),
+                      
+                      // LOGIN BUTTON
                       BlocBuilder<AuthBloc, AuthState>(
                         builder: (context, state) {
-                          if (state is AuthLoading) {
-                            return const Center(
-                                child: CircularProgressIndicator(strokeWidth: 2));
-                          }
+                          final isLoading = state is AuthLoading;
                           return ElevatedButton(
-                            onPressed: _login,
+                            onPressed: isLoading ? null : _login,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: theme.colorScheme.primary,
-                              foregroundColor: theme.colorScheme.onPrimary,
+                              backgroundColor: isDark ? theme.colorScheme.primary : Colors.black,
+                              foregroundColor: isDark ? Colors.black : Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                             ),
-                            child: const Text('Ingresar', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                            child: isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                                  )
+                                : const Text('Acceder a la Red'),
                           );
                         },
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      Text(
+                        'Red Operativa Serenazgo Surquillo',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
                       ),
                     ],
                   ),
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _YouthfulHeader extends StatelessWidget {
+  const _YouthfulHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.1),
+            shape: BoxShape.circle,
           ),
-        ));
+          child: Icon(Iconsax.shield_security, size: 48, color: theme.colorScheme.primary),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'SerenoApp',
+          style: theme.textTheme.displayLarge?.copyWith(fontSize: 36),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Vigilancia inteligente para la nueva generación',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium,
+        ),
+      ],
+    );
+  }
+}
+
+class _CircleBlur extends StatelessWidget {
+  final Color color;
+  final double size;
+
+  const _CircleBlur({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: color,
+              blurRadius: 100,
+              spreadRadius: 50,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
