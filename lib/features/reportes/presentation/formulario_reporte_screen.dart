@@ -34,7 +34,7 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
   String _sectorSeleccionado = 'Módulo 11';
   final String _jefeOperaciones = 'Sisniegas Ángeles Piero Eduardo';
   final String _supervisor = 'Genaro Rojas Buleje'; // Único supervisor en la Zona 3
-  String _apoloSeleccionado = 'Jorge Zevallos'; // Jorge Zevallos, Lora Jorge, José Luis Valdivia del Álamo
+  String _apoloSeleccionado = 'Jorge Zevallos Lora'; // Jorge Zevallos Lora y José Luis Valdivia del Álamo
 
   @override
   void initState() {
@@ -315,7 +315,7 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                         ),
                       ],
                       const SizedBox(height: 14),
-                      // Dropdown de Apolo (Jefe de Zona) - Jorge Zevallos, Lora Jorge, José Luis Valdivia del Álamo
+                      // Dropdown de Apolo (Jefe de Zona) - Jorge Zevallos Lora, José Luis Valdivia del Álamo
                       DropdownButtonFormField<String>(
                         value: _apoloSeleccionado,
                         dropdownColor: isDark ? const Color(0xFF0F172A) : Colors.white,
@@ -323,7 +323,7 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                           labelText: 'Apolo (Jefe de Zona)',
                           prefixIcon: Icon(Iconsax.personalcard),
                         ),
-                        items: ['Jorge Zevallos', 'Lora Jorge', 'José Luis Valdivia del Álamo']
+                        items: ['Jorge Zevallos Lora', 'José Luis Valdivia del Álamo']
                             .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                             .toList(),
                         onChanged: (v) => setState(() => _apoloSeleccionado = v!),
