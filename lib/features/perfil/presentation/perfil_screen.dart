@@ -11,8 +11,16 @@ import '../../auth/presentation/bloc/auth_bloc.dart';
 /// Muestra estadísticas de patrullaje, reportes oficiales y turnos activos.
 /// Soporta tema dinámico día/noche con efecto Liquid Glass adaptativo
 /// y edición del perfil (Nombre, Apellidos y Foto) sincronizado en tiempo real con Supabase.
-class PerfilScreen extends StatelessWidget {
+class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
+
+  @override
+  State<PerfilScreen> createState() => _PerfilScreenState();
+}
+
+class _PerfilScreenState extends State<PerfilScreen> {
+  bool _isNightShift = true; // Turno por defecto: Noche
+  String _selectedServicePoint = 'Unidad Móvil M-09'; // Punto de servicio por defecto
 
   @override
   Widget build(BuildContext context) {
@@ -264,42 +272,369 @@ class PerfilScreen extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0xFF1E293B).withValues(alpha: 0.4)
-                : const Color(0xFFF1F5F9).withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: cardBorderColor, width: 1.2),
-          ),
-          child: Row(
-            children: [
-              const _PulsingActiveBadge(),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Turno Activo • Patrullaje de Noche',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => _showShiftSelectionModal(context, theme, isDark, cardBorderColor, textColor),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF1E293B).withValues(alpha: 0.4)
+                  : const Color(0xFFF1F5F9).withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: cardBorderColor, width: 1.2),
+            ),
+            child: Row(
+              children: [
+                _PulsingActiveBadge(isNight: _isNightShift),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _isNightShift ? Iconsax.moon : Iconsax.sun_1,
+                            size: 16,
+                            color: _isNightShift ? const Color(0xFF00F2FF) : Colors.amber,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              _isNightShift
+                                  ? 'Turno Activo • Patrullaje de Noche'
+                                  : 'Turno Activo • Patrullaje de Día',
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Fin de turno: 06:00 AM • Unidad M-09',
-                      style: TextStyle(color: subTextColor, fontSize: 12),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        _isNightShift
+                            ? 'Fin de turno: 06:00 AM • $_selectedServicePoint'
+                            : 'Fin de turno: 06:00 PM • $_selectedServicePoint',
+                        style: TextStyle(color: subTextColor, fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                Icon(
+                  Iconsax.arrow_right_3,
+                  size: 16,
+                  color: textColor.withValues(alpha: 0.4),
+                ),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showShiftSelectionModal(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+    Color cardBorderColor,
+    Color textColor,
+  ) {
+    final cardBgColor = isDark
+        ? const Color(0xFF0F172A).withValues(alpha: 0.85)
+        : Colors.white.withValues(alpha: 0.9);
+
+    final points = [
+      'Unidad Móvil M-09',
+      'Módulo Central MC-01',
+      'Zona Turística ZT-04',
+      'Punto Fijo Parques PF-02',
+      'Caseta de Vigilancia CV-05',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              top: 24,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(28),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: cardBgColor,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: cardBorderColor, width: 1.2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 8),
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF334155).withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Configurar Turno y Servicio',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Actualiza tu turno y punto de asignación actual',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: isDark ? Colors.white60 : Colors.black54,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Sección de Turno
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Horario de Turno',
+                            style: TextStyle(
+                              color: textColor.withValues(alpha: 0.7),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () {
+                                  setModalState(() {
+                                    _isNightShift = false;
+                                  });
+                                  setState(() {});
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: !_isNightShift
+                                        ? Colors.amber.withValues(alpha: 0.15)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: !_isNightShift
+                                          ? Colors.amber
+                                          : cardBorderColor,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      const Icon(Iconsax.sun_1, color: Colors.amber, size: 24),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Turno Día',
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '06:00 AM - 06:00 PM',
+                                        style: TextStyle(
+                                          color: isDark ? Colors.white54 : Colors.black54,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () {
+                                  setModalState(() {
+                                    _isNightShift = true;
+                                  });
+                                  setState(() {});
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: _isNightShift
+                                        ? const Color(0xFF00F2FF).withValues(alpha: 0.15)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: _isNightShift
+                                          ? const Color(0xFF00F2FF)
+                                          : cardBorderColor,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      const Icon(Iconsax.moon, color: Color(0xFF00F2FF), size: 24),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Turno Noche',
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '06:00 PM - 06:00 AM',
+                                        style: TextStyle(
+                                          color: isDark ? Colors.white54 : Colors.black54,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Sección de Módulo de Servicio
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Módulo o Punto de Servicio',
+                            style: TextStyle(
+                              color: textColor.withValues(alpha: 0.7),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: cardBorderColor, width: 1.2),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButtonFormField<String>(
+                                value: _selectedServicePoint,
+                                dropdownColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                icon: Icon(Iconsax.arrow_down_1, color: textColor.withValues(alpha: 0.6), size: 20),
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w600),
+                                items: points.map((p) {
+                                  return DropdownMenuItem<String>(
+                                    value: p,
+                                    child: Text(p),
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    setModalState(() {
+                                      _selectedServicePoint = val;
+                                    });
+                                    setState(() {});
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+
+                        // Botón de Confirmación
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Turno y Punto actualizados: ${_isNightShift ? "Turno Noche" : "Turno Día"} • $_selectedServicePoint',
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  backgroundColor: theme.colorScheme.primary,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Iconsax.tick_circle),
+                            label: const Text('Confirmar Cambios', style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.colorScheme.primary,
+                              foregroundColor: isDark ? Colors.black : Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -388,57 +723,302 @@ class PerfilScreen extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: cardBgColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: cardBorderColor, width: 1.2),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _showKpiDetailModal(context, theme, isDark, cardBorderColor, textColor, label, value, icon, accentColor),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: cardBgColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: cardBorderColor, width: 1.2),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Icon(icon, color: accentColor, size: 20),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: accentColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: accentColor.withValues(alpha: 0.4),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      value,
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      label,
+                      style: TextStyle(color: subTextColor, fontSize: 11),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Icon(icon, color: accentColor, size: 20),
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: accentColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: accentColor.withValues(alpha: 0.4),
-                          blurRadius: 4,
+        ),
+      ),
+    );
+  }
+
+  void _showKpiDetailModal(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+    Color cardBorderColor,
+    Color textColor,
+    String label,
+    String value,
+    IconData icon,
+    Color accentColor,
+  ) {
+    final cardBgColor = isDark
+        ? const Color(0xFF0F172A).withValues(alpha: 0.85)
+        : Colors.white.withValues(alpha: 0.9);
+
+    String detailTitle = '';
+    String description = '';
+    List<Map<String, String>> indicators = [];
+
+    if (label.contains('Patrullado')) {
+      detailTitle = 'Detalles de Patrullaje';
+      description = 'Estadística acumulada de la distancia recorrida en patrullas a pie, motorizadas e integradas durante el mes actual.';
+      indicators = [
+        {'title': 'Distancia a Pie', 'value': '24.5 km'},
+        {'title': 'Distancia Motorizada', 'value': '124.0 km'},
+        {'title': 'Área de Cobertura', 'value': '94.2%'},
+        {'title': 'Tiempo Activo en Ruta', 'value': '38.5 hrs'},
+      ];
+    } else if (label.contains('Reportes')) {
+      detailTitle = 'Detalles de Reportes';
+      description = 'Total de informes de novedades y reportes oficiales cargados al sistema y sincronizados con la central de seguridad.';
+      indicators = [
+        {'title': 'Novedades Críticas', 'value': '8 reportes'},
+        {'title': 'Novedades Leves', 'value': '24 reportes'},
+        {'title': 'Mensajes en Muro', 'value': '10 posts'},
+        {'title': 'Tasa de Sincronización', 'value': '100%'},
+      ];
+    } else if (label.contains('SOS')) {
+      detailTitle = 'Atención de Emergencias';
+      description = 'Número de alertas SOS emitidas por ciudadanos o activadas por la central a las cuales has acudido y brindado respuesta inmediata.';
+      indicators = [
+        {'title': 'Tiempo de Respuesta Prom.', 'value': '3.2 min'},
+        {'title': 'Emergencias de Tránsito', 'value': '4 casos'},
+        {'title': 'Apoyo Policial/Asistencial', 'value': '11 casos'},
+        {'title': 'Satisfacción Ciudadana', 'value': '98%'},
+      ];
+    } else {
+      detailTitle = 'Desempeño Profesional';
+      description = 'Evaluación integral del desempeño emitida por el Supervisor General de Serenazgo basada en puntualidad, efectividad y vocación de servicio.';
+      indicators = [
+        {'title': 'Puntualidad y Asistencia', 'value': '5.0 / 5.0'},
+        {'title': 'Calidad de Reportes', 'value': '4.8 / 5.0'},
+        {'title': 'Trabajo en Equipo', 'value': '4.9 / 5.0'},
+        {'title': 'Última Evaluación', 'value': 'Hace 2 días'},
+      ];
+    }
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder: (ctx) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: cardBgColor,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: cardBorderColor, width: 1.2),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Cabecera del Modal con Icono Animado
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: accentColor.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(icon, color: accentColor, size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                detailTitle,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Desempeño Oficial',
+                                style: TextStyle(
+                                  color: textColor.withValues(alpha: 0.5),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: textColor.withValues(alpha: 0.05),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.close, color: textColor.withValues(alpha: 0.6), size: 16),
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 20),
+
+                    // Cifra Destacada
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: accentColor.withValues(alpha: 0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Valor Registrado:',
+                              style: TextStyle(
+                                color: textColor.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            value,
+                            style: TextStyle(
+                              color: accentColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 22,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    label,
-                    style: TextStyle(color: subTextColor, fontSize: 11),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                    const SizedBox(height: 16),
+
+                    // Descripción del Indicador
+                    Text(
+                      description,
+                      style: TextStyle(
+                        color: textColor.withValues(alpha: 0.8),
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Lista de Sub-indicadores
+                    Text(
+                      'Desglose Técnico',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Column(
+                      children: indicators.map((ind) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                ind['title']!,
+                                style: TextStyle(
+                                  color: textColor.withValues(alpha: 0.6),
+                                  fontSize: 13,
+                                ),
+                              ),
+                              Text(
+                                ind['value']!,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Botón de Cierre
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: isDark ? Colors.black : Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Entendido',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -765,7 +1345,8 @@ class PerfilScreen extends StatelessWidget {
 // COMPONENTE DE BADGE PULSANTE DE ESTADO
 // ─────────────────────────────────────────────────────────────
 class _PulsingActiveBadge extends StatefulWidget {
-  const _PulsingActiveBadge();
+  final bool isNight;
+  const _PulsingActiveBadge({required this.isNight});
 
   @override
   State<_PulsingActiveBadge> createState() => _PulsingActiveBadgeState();
@@ -791,6 +1372,7 @@ class _PulsingActiveBadgeState extends State<_PulsingActiveBadge> with SingleTic
 
   @override
   Widget build(BuildContext context) {
+    final badgeColor = widget.isNight ? const Color(0xFF00F2FF) : Colors.amber;
     return AnimatedBuilder(
       animation: _pulseCtrl,
       builder: (context, child) {
@@ -801,15 +1383,15 @@ class _PulsingActiveBadgeState extends State<_PulsingActiveBadge> with SingleTic
               width: 24 * (1 + _pulseCtrl.value * 0.4),
               height: 24 * (1 + _pulseCtrl.value * 0.4),
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.3 * (1 - _pulseCtrl.value)),
+                color: badgeColor.withValues(alpha: 0.3 * (1 - _pulseCtrl.value)),
                 shape: BoxShape.circle,
               ),
             ),
             Container(
               width: 14,
               height: 14,
-              decoration: const BoxDecoration(
-                color: Colors.green,
+              decoration: BoxDecoration(
+                color: badgeColor,
                 shape: BoxShape.circle,
               ),
             ),

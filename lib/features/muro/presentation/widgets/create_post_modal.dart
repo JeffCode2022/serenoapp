@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -65,44 +66,74 @@ class _CreatePostModalState extends State<CreatePostModal>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
-    return FadeTransition(
-      opacity: _fadeAnim,
-      child: Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.92,
-        ),
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border(
-            top: BorderSide(color: const Color(0xFF1E293B), width: 1),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHandle(),
-            _buildHeader(context, theme),
-            const Divider(height: 1, color: Color(0xFF1E293B)),
-            Flexible(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                padding: EdgeInsets.only(bottom: bottomPadding + 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildTextArea(theme),
-                    if (_showLinkInput) _buildLinkInput(theme),
-                    if (_attachments.isNotEmpty) _buildAttachmentPreview(theme),
-                  ],
-                ),
+    // Tokens de Diseño Glassmorphic
+    final cardBgColor = isDark
+        ? const Color(0xFF0F172A).withValues(alpha: 0.65)
+        : Colors.white.withValues(alpha: 0.78);
+
+    final cardBorderColor = isDark
+        ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+        : const Color(0xFFE2E8F0);
+
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        bottom: bottomPadding > 0 ? bottomPadding + 16 : 24,
+      ),
+      child: FadeTransition(
+        opacity: _fadeAnim,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+              ),
+              decoration: BoxDecoration(
+                color: cardBgColor,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: cardBorderColor, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildHandle(),
+                  _buildHeader(context, theme, isDark, textColor),
+                  Divider(height: 1, color: cardBorderColor),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTextArea(theme, textColor),
+                          if (_showLinkInput) _buildLinkInput(theme, isDark, textColor, cardBorderColor),
+                          if (_attachments.isNotEmpty) _buildAttachmentPreview(theme),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Divider(height: 1, color: cardBorderColor),
+                  _buildToolbar(context, theme, isDark, textColor, cardBgColor, cardBorderColor),
+                ],
               ),
             ),
-            const Divider(height: 1, color: Color(0xFF1E293B)),
-            _buildToolbar(context, theme),
-          ],
+          ),
         ),
       ),
     );
@@ -115,14 +146,14 @@ class _CreatePostModalState extends State<CreatePostModal>
         width: 40,
         height: 4,
         decoration: BoxDecoration(
-          color: const Color(0xFF334155),
+          color: const Color(0xFF334155).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(2),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, ThemeData theme) {
+  Widget _buildHeader(BuildContext context, ThemeData theme, bool isDark, Color textColor) {
     final authState = context.read<AuthBloc>().state;
     String? avatarUrl;
     if (authState is AuthAuthenticated) {
@@ -144,10 +175,21 @@ class _CreatePostModalState extends State<CreatePostModal>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Nueva Novedad',
-                    style: theme.textTheme.labelLarge?.copyWith(fontSize: 16)),
-                Text('Comparte algo con el equipo',
-                    style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12)),
+                Text(
+                  'Nueva Novedad',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Comparte algo con el equipo',
+                  style: TextStyle(
+                    color: isDark ? Colors.white60 : Colors.black54,
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
@@ -156,19 +198,25 @@ class _CreatePostModalState extends State<CreatePostModal>
             opacity: _canPublish ? 1.0 : 0.4,
             duration: const Duration(milliseconds: 200),
             child: _isPublishing
-                ? const SizedBox(
+                ? SizedBox(
                     width: 36,
                     height: 36,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: isDark ? const Color(0xFF00F2FF) : const Color(0xFF6366F1),
+                    ),
                   )
                 : ElevatedButton(
                     onPressed: _canPublish ? _publish : null,
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: isDark ? const Color(0xFF00F2FF) : const Color(0xFF6366F1),
+                      foregroundColor: isDark ? Colors.black : Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       minimumSize: Size.zero,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      elevation: 0,
                     ),
-                    child: const Text('Publicar', style: TextStyle(fontSize: 14)),
+                    child: const Text('Publicar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                   ),
           ),
         ],
@@ -176,7 +224,7 @@ class _CreatePostModalState extends State<CreatePostModal>
     );
   }
 
-  Widget _buildTextArea(ThemeData theme) {
+  Widget _buildTextArea(ThemeData theme, Color textColor) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: TextField(
@@ -184,11 +232,14 @@ class _CreatePostModalState extends State<CreatePostModal>
         maxLines: null,
         minLines: 3,
         autofocus: true,
-        style: theme.textTheme.bodyLarge?.copyWith(fontSize: 16, height: 1.6),
+        style: TextStyle(color: textColor, fontSize: 16, height: 1.6),
         onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
           hintText: '¿Qué está pasando en tu sector?',
-          hintStyle: theme.textTheme.bodyMedium?.copyWith(fontSize: 16),
+          hintStyle: TextStyle(
+            color: textColor.withValues(alpha: 0.5),
+            fontSize: 16,
+          ),
           filled: false,
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
@@ -199,37 +250,46 @@ class _CreatePostModalState extends State<CreatePostModal>
     );
   }
 
-  Widget _buildLinkInput(ThemeData theme) {
+  Widget _buildLinkInput(ThemeData theme, bool isDark, Color textColor, Color cardBorderColor) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A),
+          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF1E293B)),
+          border: Border.all(color: cardBorderColor),
         ),
         child: Row(
           children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 14),
-              child: Icon(Iconsax.link_1, color: Color(0xFF00F2FF), size: 18),
+            Padding(
+              padding: const EdgeInsets.only(left: 14),
+              child: Icon(
+                Iconsax.link_1,
+                color: isDark ? const Color(0xFF00F2FF) : const Color(0xFF6366F1),
+                size: 18,
+              ),
             ),
             Expanded(
               child: TextField(
                 controller: _linkController,
                 keyboardType: TextInputType.url,
-                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
-                decoration: const InputDecoration(
+                style: TextStyle(color: textColor, fontSize: 14),
+                decoration: InputDecoration(
                   hintText: 'Pega un enlace aquí...',
+                  hintStyle: TextStyle(color: textColor.withValues(alpha: 0.5)),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 ),
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.check_rounded, color: Color(0xFF00F2FF), size: 20),
+              icon: Icon(
+                Icons.check_rounded,
+                color: isDark ? const Color(0xFF00F2FF) : const Color(0xFF6366F1),
+                size: 20,
+              ),
               onPressed: _addLink,
             ),
             IconButton(
@@ -268,8 +328,16 @@ class _CreatePostModalState extends State<CreatePostModal>
     );
   }
 
-  Widget _buildToolbar(BuildContext context, ThemeData theme) {
+  Widget _buildToolbar(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+    Color textColor,
+    Color cardBgColor,
+    Color cardBorderColor,
+  ) {
     return SafeArea(
+      top: false,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Row(
@@ -277,13 +345,13 @@ class _CreatePostModalState extends State<CreatePostModal>
             _ToolbarButton(
               icon: Iconsax.camera,
               label: 'Cámara',
-              color: const Color(0xFF00F2FF),
+              color: isDark ? const Color(0xFF00F2FF) : const Color(0xFF6366F1),
               onTap: _pickFromCamera,
             ),
             _ToolbarButton(
               icon: Iconsax.image,
               label: 'Galería',
-              color: Colors.purple.shade300,
+              color: Colors.purple.shade400,
               onTap: _pickFromGallery,
             ),
             _ToolbarButton(

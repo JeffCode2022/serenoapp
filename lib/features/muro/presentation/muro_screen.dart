@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
@@ -197,64 +198,134 @@ class PostCard extends StatelessWidget {
   void _showOptions(BuildContext context) {
     final currentUser = Supabase.instance.client.auth.currentUser;
     final isAuthor = currentUser?.id == post.userId;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Tokens de Diseño Glassmorphic
+    final cardBgColor = isDark
+        ? const Color(0xFF0F172A).withValues(alpha: 0.65)
+        : Colors.white.withValues(alpha: 0.78);
+
+    final cardBorderColor = isDark
+        ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+        : const Color(0xFFE2E8F0);
+
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(ctx).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[800], borderRadius: BorderRadius.circular(2))),
-            if (isAuthor)
-              ListTile(
-                leading: const Icon(Iconsax.edit),
-                title: const Text('Editar publicación'),
-                onTap: () { Navigator.pop(ctx); _showEditDialog(context); },
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardBgColor,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: cardBorderColor, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
-            if (isAuthor)
-              ListTile(
-                leading: const Icon(Iconsax.trash, color: Colors.red),
-                title: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-                onTap: () { Navigator.pop(ctx); _showDeleteConfirmation(context); },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF334155).withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (isAuthor)
+                    ListTile(
+                      leading: Icon(Iconsax.edit, color: textColor),
+                      title: Text('Editar publicación', style: TextStyle(color: textColor)),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showEditDialog(context);
+                      },
+                    ),
+                  if (isAuthor)
+                    ListTile(
+                      leading: const Icon(Iconsax.trash, color: Colors.redAccent),
+                      title: const Text('Eliminar', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showDeleteConfirmation(context);
+                      },
+                    ),
+                  ListTile(
+                    leading: Icon(Iconsax.copy, color: textColor),
+                    title: Text('Copiar texto', style: TextStyle(color: textColor)),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ),
-            ListTile(
-              leading: const Icon(Iconsax.copy),
-              title: const Text('Copiar texto'),
-              onTap: () => Navigator.pop(ctx),
             ),
-            const SizedBox(height: 24),
-          ],
+          ),
         ),
       ),
     );
   }
 
   void _showDeleteConfirmation(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(ctx).scaffoldBackgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(children: [
-          Icon(Iconsax.danger, color: Colors.red),
-          SizedBox(width: 12),
-          Text('¿Eliminar post?'),
-        ]),
-        content: const Text('Esta acción no se puede deshacer.'),
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            const Icon(Iconsax.danger, color: Colors.redAccent),
+            const SizedBox(width: 12),
+            Text(
+              '¿Eliminar post?',
+              style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A), fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          'Esta acción no se puede deshacer.',
+          style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancelar', style: TextStyle(color: Colors.grey[400]))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
+            ),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              elevation: 0,
+            ),
             onPressed: () {
               context.read<MuroBloc>().add(DeleteMuroPost(postId: post.id));
               Navigator.pop(ctx);
             },
-            child: const Text('Eliminar'),
+            child: const Text('Eliminar', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -264,46 +335,137 @@ class PostCard extends StatelessWidget {
   void _showEditDialog(BuildContext context) {
     final editCtrl = TextEditingController(text: post.content);
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Tokens de Diseño Glassmorphic
+    final cardBgColor = isDark
+        ? const Color(0xFF0F172A).withValues(alpha: 0.65)
+        : Colors.white.withValues(alpha: 0.78);
+
+    final cardBorderColor = isDark
+        ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+        : const Color(0xFFE2E8F0);
+
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => BlocProvider.value(
         value: context.read<MuroBloc>(),
-        child: Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-          child: Container(
-            decoration: BoxDecoration(color: theme.scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(28))),
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Editar Publicación', style: theme.textTheme.titleLarge),
-                    IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Iconsax.close_circle)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextField(controller: editCtrl, maxLines: 6, autofocus: true),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (editCtrl.text.trim().isNotEmpty) {
-                        context.read<MuroBloc>().add(UpdateMuroPost(postId: post.id, content: editCtrl.text.trim()));
-                        Navigator.pop(ctx);
-                      }
-                    },
-                    child: const Text('Guardar cambios'),
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                bottom: bottomPadding > 0 ? bottomPadding + 16 : 24,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: cardBgColor,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: cardBorderColor, width: 1.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Handle bar
+                        Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF334155).withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Editar Publicación',
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              icon: Icon(
+                                Iconsax.close_circle,
+                                color: textColor.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: editCtrl,
+                          maxLines: 5,
+                          autofocus: true,
+                          style: TextStyle(color: textColor, fontSize: 15, height: 1.5),
+                          decoration: InputDecoration(
+                            hintText: 'Edita tu novedad...',
+                            hintStyle: TextStyle(color: textColor.withValues(alpha: 0.4)),
+                            filled: false,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: editCtrl.text.trim().isNotEmpty
+                                ? () {
+                                    context.read<MuroBloc>().add(
+                                          UpdateMuroPost(
+                                            postId: post.id,
+                                            content: editCtrl.text.trim(),
+                                          ),
+                                        );
+                                    Navigator.pop(ctx);
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDark ? const Color(0xFF00F2FF) : const Color(0xFF6366F1),
+                              foregroundColor: isDark ? Colors.black : Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              'Guardar cambios',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

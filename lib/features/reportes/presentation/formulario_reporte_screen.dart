@@ -197,17 +197,33 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                                 alignment: Alignment.center,
                                 children: [
                                   Container(
-                                    width: 32,
-                                    height: 32,
+                                    width: 40,
+                                    height: 40,
                                     decoration: BoxDecoration(
-                                      color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                                      color: (isDark ? const Color(0xFF00F2FF) : const Color(0xFF6366F1)).withValues(alpha: 0.2),
                                       shape: BoxShape.circle,
                                     ),
                                   ),
-                                  const Icon(
-                                    Icons.location_on,
-                                    color: Colors.redAccent,
-                                    size: 30,
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      color: Colors.redAccent,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 2),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.25),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.my_location,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -223,12 +239,32 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.6)
+                              : Colors.white.withValues(alpha: 0.92),
                           borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0xFF1E293B).withValues(alpha: 0.6)
+                                : const Color(0xFFE2E8F0),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            if (!isDark)
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                          ],
                         ),
-                        child: const Text(
+                        child: Text(
                           'Toca el mapa para mover la ubicación',
-                          style: TextStyle(color: Colors.white, fontSize: 10),
+                          style: TextStyle(
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -240,12 +276,12 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                         heroTag: 'geolocalizar_reporte',
                         onPressed: _cargandoUbicacion ? null : _geolocalizarDispositivo,
                         backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: Colors.black,
+                        foregroundColor: isDark ? Colors.black : Colors.white,
                         child: _cargandoUbicacion
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: isDark ? Colors.black : Colors.white),
                               )
                             : const Icon(Icons.gps_fixed, size: 18),
                       ),
@@ -289,12 +325,20 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                         value: _sectorSeleccionado,
                         isExpanded: true,
                         dropdownColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+                        style: TextStyle(color: textColor, fontSize: 14),
                         decoration: const InputDecoration(
                           labelText: 'Zona Operativa (Módulo de Zona 3)',
                           prefixIcon: Icon(Iconsax.routing),
                         ),
                         items: ['Módulo 09', 'Módulo 10', 'Módulo 11', 'Módulo 14', 'Módulo 15', 'Módulo 16', 'Otro (Especificar)']
-                            .map((z) => DropdownMenuItem(value: z, child: Text(z, overflow: TextOverflow.ellipsis)))
+                            .map((z) => DropdownMenuItem(
+                                  value: z,
+                                  child: Text(
+                                    z,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(color: textColor),
+                                  ),
+                                ))
                             .toList(),
                         onChanged: (v) => setState(() => _sectorSeleccionado = v!),
                       ),
@@ -302,6 +346,7 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                         const SizedBox(height: 14),
                         TextFormField(
                           controller: _especificarController,
+                          style: TextStyle(color: textColor),
                           decoration: const InputDecoration(
                             labelText: 'Especificar Lugar / Módulo Especial',
                             hintText: 'Ej: Parque Reducto, Apoyo táctico',
@@ -321,12 +366,20 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                         value: _apoloSeleccionado,
                         isExpanded: true,
                         dropdownColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+                        style: TextStyle(color: textColor, fontSize: 14),
                         decoration: const InputDecoration(
                           labelText: 'Apolo (Jefe de Zona)',
                           prefixIcon: Icon(Iconsax.personalcard),
                         ),
                         items: ['Jorge Zevallos Lora', 'José Luis Valdivia del Álamo']
-                            .map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis)))
+                            .map((s) => DropdownMenuItem(
+                                  value: s,
+                                  child: Text(
+                                    s,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(color: textColor),
+                                  ),
+                                ))
                             .toList(),
                         onChanged: (v) => setState(() => _apoloSeleccionado = v!),
                       ),
@@ -437,7 +490,7 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
     );
 
     if (widget.isEmbedded) {
-      return bodyContent(context, formWidget);
+      return bodyContent(context, formWidget, isDark);
     }
 
     return Scaffold(
@@ -446,18 +499,23 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
         centerTitle: true,
         elevation: 0,
       ),
-      body: bodyContent(context, formWidget),
+      body: bodyContent(context, formWidget, isDark),
     );
   }
 
-  Widget bodyContent(BuildContext context, Widget formWidget) {
+  Widget bodyContent(BuildContext context, Widget formWidget, bool isDark) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF070B19),
-          ],
+          colors: isDark
+              ? const [
+                  Color(0xFF0F172A),
+                  Color(0xFF070B19),
+                ]
+              : const [
+                  Color(0xFFF8FAFC),
+                  Color(0xFFF1F5F9),
+                ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
