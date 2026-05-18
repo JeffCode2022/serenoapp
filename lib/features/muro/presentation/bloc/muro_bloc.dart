@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/repositories/muro_repository.dart';
 import '../../domain/models/muro_post_model.dart';
+import '../../domain/models/attachment_model.dart';
 
 part 'muro_event.dart';
 part 'muro_state.dart';
@@ -26,7 +27,6 @@ class MuroBloc extends Bloc<MuroEvent, MuroState> {
   void _initRealtime() {
     print('Intentando conectar al flujo de noticias...');
     
-    // Usamos una suscripción más directa para evitar timeouts
     _subscription = repository.supabase
         .channel('muro_social')
         .onPostgresChanges(
@@ -44,6 +44,15 @@ class MuroBloc extends Bloc<MuroEvent, MuroState> {
           table: 'muro_likes',
           callback: (payload) {
             print('¡Actualización de Like!');
+            add(LoadMuroPosts());
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'muro_attachments',
+          callback: (payload) {
+            print('¡Actualización de Adjunto!');
             add(LoadMuroPosts());
           },
         )
@@ -69,7 +78,6 @@ class MuroBloc extends Bloc<MuroEvent, MuroState> {
       final posts = await repository.getPosts();
       emit(MuroLoaded(posts: posts));
     } catch (e) {
-      // Si ya teníamos posts, no mostramos error total, solo ignoramos o manejamos el log
       if (state is! MuroLoaded) {
         emit(MuroError(message: e.toString()));
       }
@@ -80,8 +88,7 @@ class MuroBloc extends Bloc<MuroEvent, MuroState> {
     try {
       await repository.createPost(
         event.content,
-        imageUrl: event.imageUrl,
-        fileUrl: event.fileUrl,
+        attachments: event.attachments,
         isSos: event.isSos,
       );
       add(LoadMuroPosts());

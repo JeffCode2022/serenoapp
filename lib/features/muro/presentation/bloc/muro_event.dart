@@ -11,15 +11,13 @@ class LoadMuroPosts extends MuroEvent {}
 
 class CreateMuroPost extends MuroEvent {
   final String content;
-  final String? imageUrl;
-  final String? fileUrl;
+  final List<PendingAttachment>? attachments;
   final bool isSos;
 
   const CreateMuroPost({
     required this.content, 
-    this.imageUrl, 
-    this.fileUrl,
-    this.isSos = false
+    this.attachments,
+    this.isSos = false,
   });
 
   @override
