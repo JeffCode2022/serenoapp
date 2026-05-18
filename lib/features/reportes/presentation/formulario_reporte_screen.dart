@@ -25,15 +25,16 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
   final TextEditingController _lugarController = TextEditingController();
   final TextEditingController _novedadController = TextEditingController();
   final TextEditingController _apoyoController = TextEditingController();
+  final TextEditingController _especificarController = TextEditingController();
 
   final MapController _mapController = MapController();
   LatLng _coordActual = const LatLng(-12.115, -77.018); // Centro de Surquillo
   bool _cargandoUbicacion = false;
 
-  String _sectorSeleccionado = 'Sector 03 / Módulo 11';
+  String _sectorSeleccionado = 'Módulo 11';
   final String _jefeOperaciones = 'Sisniegas Ángeles Piero Eduardo';
   final String _supervisor = 'Genaro Rojas Buleje'; // Único supervisor en la Zona 3
-  String _apoloSeleccionado = 'Apolo Jorge'; // Jorge y José son los Apolos (Jefes de Zona)
+  String _apoloSeleccionado = 'Jorge Zevallos'; // Jorge Zevallos, Lora Jorge, José Luis Valdivia del Álamo
 
   @override
   void initState() {
@@ -98,9 +99,13 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
   void _generarYEnviarWhatsApp() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final String sectorReporte = _sectorSeleccionado == 'Otro (Especificar)'
+        ? 'Especificar: ${_especificarController.text.trim()}'
+        : _sectorSeleccionado;
+
     final mensaje = WhatsAppFormatter.generarReporte(
       fecha: DateTime.now(),
-      moduloSector: _sectorSeleccionado,
+      moduloSector: sectorReporte,
       lugar: _lugarController.text.trim(),
       jefeOperaciones: _jefeOperaciones,
       supervisorZona: _supervisor,
@@ -280,21 +285,37 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // Dropdown de Zona
                       DropdownButtonFormField<String>(
                         value: _sectorSeleccionado,
                         dropdownColor: isDark ? const Color(0xFF0F172A) : Colors.white,
                         decoration: const InputDecoration(
-                          labelText: 'Zona Operativa',
+                          labelText: 'Zona Operativa (Módulo de Zona 3)',
                           prefixIcon: Icon(Iconsax.routing),
                         ),
-                        items: ['Sector 03 / Módulo 11', 'Sector 03 / Módulo 12']
+                        items: ['Módulo 09', 'Módulo 10', 'Módulo 11', 'Módulo 14', 'Módulo 15', 'Módulo 16', 'Otro (Especificar)']
                             .map((z) => DropdownMenuItem(value: z, child: Text(z)))
                             .toList(),
                         onChanged: (v) => setState(() => _sectorSeleccionado = v!),
                       ),
+                      if (_sectorSeleccionado == 'Otro (Especificar)') ...[
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _especificarController,
+                          decoration: const InputDecoration(
+                            labelText: 'Especificar Lugar / Módulo Especial',
+                            hintText: 'Ej: Parque Reducto, Apoyo táctico',
+                            prefixIcon: Icon(Iconsax.edit),
+                          ),
+                          validator: (v) {
+                            if (_sectorSeleccionado == 'Otro (Especificar)' && (v == null || v.trim().isEmpty)) {
+                              return 'Por favor especifique el lugar o apoyo';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
                       const SizedBox(height: 14),
-                      // Dropdown de Apolo (Jefe de Zona) - Jorge y Jose
+                      // Dropdown de Apolo (Jefe de Zona) - Jorge Zevallos, Lora Jorge, José Luis Valdivia del Álamo
                       DropdownButtonFormField<String>(
                         value: _apoloSeleccionado,
                         dropdownColor: isDark ? const Color(0xFF0F172A) : Colors.white,
@@ -302,7 +323,7 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                           labelText: 'Apolo (Jefe de Zona)',
                           prefixIcon: Icon(Iconsax.personalcard),
                         ),
-                        items: ['Apolo Jorge', 'Apolo Jose']
+                        items: ['Jorge Zevallos', 'Lora Jorge', 'José Luis Valdivia del Álamo']
                             .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                             .toList(),
                         onChanged: (v) => setState(() => _apoloSeleccionado = v!),
