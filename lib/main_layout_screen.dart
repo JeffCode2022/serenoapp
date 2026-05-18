@@ -4,6 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iconsax/iconsax.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/muro/presentation/muro_screen.dart';
+import 'features/radar/presentation/radar_screen.dart';
+import 'features/reportes/presentation/formulario_reporte_screen.dart';
+import 'features/perfil/presentation/perfil_screen.dart';
 
 class MainLayoutScreen extends StatefulWidget {
   static const Color primaryColor = Color(0xFF00F2FF);
@@ -18,9 +21,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
 
   final List<Widget> _pages = [
     const MuroScreen(),
-    const Center(child: Text('Radar (Mapa)')), // Placeholder
-    const Center(child: Text('Reportar')), // Placeholder
-    const Center(child: Text('Perfil')), // Placeholder
+    const RadarScreen(),
+    const FormularioReporteScreen(isEmbedded: true),
+    const PerfilScreen(),
   ];
 
   @override
@@ -29,11 +32,6 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
-        String userDni = 'Usuario';
-        if (state is AuthAuthenticated) {
-          userDni = state.dni;
-        }
-
         return Scaffold(
           appBar: AppBar(
             title: Text(
@@ -57,8 +55,6 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 IconButton(
                   icon: const Icon(Iconsax.add_circle, color: MainLayoutScreen.primaryColor),
                   onPressed: () {
-                    // Llamamos a un método estático o usamos un GlobalKey si es necesario, 
-                    // pero por simplicidad, definiremos el modal aquí o en el MuroScreen.
                     MuroScreen.showCreatePostModal(context);
                   },
                 ),
@@ -97,13 +93,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (index) {
-              if (index == 2) {
-                context.push('/formulario');
-              } else {
-                setState(() {
-                  _currentIndex = index;
-                });
-              }
+              setState(() {
+                _currentIndex = index;
+              });
             },
             type: BottomNavigationBarType.fixed,
             backgroundColor: theme.colorScheme.background,
