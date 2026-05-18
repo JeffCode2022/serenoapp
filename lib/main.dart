@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
@@ -14,9 +13,6 @@ import 'features/muro/presentation/bloc/muro_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Evitar descargas dinámicas HTTP de tipografías en runtime (previene errores sin conexión / DNS SocketException)
-  GoogleFonts.config.allowRuntimeFetching = false;
   
   // Inicialización de Supabase con las credenciales reales
   await Supabase.initialize(

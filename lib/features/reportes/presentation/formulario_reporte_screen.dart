@@ -287,13 +287,14 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
                         value: _sectorSeleccionado,
+                        isExpanded: true,
                         dropdownColor: isDark ? const Color(0xFF0F172A) : Colors.white,
                         decoration: const InputDecoration(
                           labelText: 'Zona Operativa (Módulo de Zona 3)',
                           prefixIcon: Icon(Iconsax.routing),
                         ),
                         items: ['Módulo 09', 'Módulo 10', 'Módulo 11', 'Módulo 14', 'Módulo 15', 'Módulo 16', 'Otro (Especificar)']
-                            .map((z) => DropdownMenuItem(value: z, child: Text(z)))
+                            .map((z) => DropdownMenuItem(value: z, child: Text(z, overflow: TextOverflow.ellipsis)))
                             .toList(),
                         onChanged: (v) => setState(() => _sectorSeleccionado = v!),
                       ),
@@ -318,13 +319,14 @@ class _FormularioReporteScreenState extends State<FormularioReporteScreen> {
                       // Dropdown de Apolo (Jefe de Zona) - Jorge Zevallos Lora, José Luis Valdivia del Álamo
                       DropdownButtonFormField<String>(
                         value: _apoloSeleccionado,
+                        isExpanded: true,
                         dropdownColor: isDark ? const Color(0xFF0F172A) : Colors.white,
                         decoration: const InputDecoration(
                           labelText: 'Apolo (Jefe de Zona)',
                           prefixIcon: Icon(Iconsax.personalcard),
                         ),
                         items: ['Jorge Zevallos Lora', 'José Luis Valdivia del Álamo']
-                            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                            .map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis)))
                             .toList(),
                         onChanged: (v) => setState(() => _apoloSeleccionado = v!),
                       ),
