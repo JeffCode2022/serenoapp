@@ -1,9 +1,12 @@
-import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
-/// Pantalla de Radar Premium con mapas vectoriales personalizados,
-/// barrido de radar animado en tiempo real, marcadores de patrullas activos y SOS.
+/// Pantalla de Radar Premium con un Mapa Interactivo de Surquillo
+/// con estilo minimalista/grisáceo (tipo Uber) dinámico según el tema del dispositivo.
+/// Permite rastrear patrullas, centrar incidentes SOS e interactuar en tiempo real.
 class RadarScreen extends StatefulWidget {
   const RadarScreen({super.key});
 
@@ -11,12 +14,15 @@ class RadarScreen extends StatefulWidget {
   State<RadarScreen> createState() => _RadarScreenState();
 }
 
-class _RadarScreenState extends State<RadarScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController _radarAnimCtrl;
+class _RadarScreenState extends State<RadarScreen> {
+  final MapController _mapController = MapController();
   String _selectedFilter = 'Todos';
   Map<String, dynamic>? _selectedPatrol;
 
-  // Mocks de patrullas y eventos en Surquillo
+  // Centro de Surquillo (Sector 3)
+  final LatLng _initialCenter = const LatLng(-12.115, -77.018);
+
+  // Mocks de patrullas y eventos en Surquillo (Sector 3)
   final List<Map<String, dynamic>> _patrols = [
     {
       'id': 'P-03',
@@ -26,8 +32,8 @@ class _RadarScreenState extends State<RadarScreen> with SingleTickerProviderStat
       'vehicle': 'Camioneta Toyota Hilux - EP-204',
       'status': 'Patrullando',
       'signal': 'Excelente',
-      'latOffset': 20.0,
-      'lngOffset': -30.0,
+      'lat': -12.112,
+      'lng': -77.022,
       'isSos': false,
     },
     {
@@ -38,8 +44,8 @@ class _RadarScreenState extends State<RadarScreen> with SingleTickerProviderStat
       'vehicle': 'Motocicleta Honda XR 250',
       'status': 'Intervención activa',
       'signal': 'Estable',
-      'latOffset': -40.0,
-      'lngOffset': 60.0,
+      'lat': -12.118,
+      'lng': -77.015,
       'isSos': false,
     },
     {
@@ -50,8 +56,8 @@ class _RadarScreenState extends State<RadarScreen> with SingleTickerProviderStat
       'vehicle': 'Dispositivo Móvil - Botón de Pánico',
       'status': '¡Emergencia Reportada!',
       'signal': 'Crítica',
-      'latOffset': 10.0,
-      'lngOffset': 90.0,
+      'lat': -12.114,
+      'lng': -77.019,
       'isSos': true,
     },
     {
@@ -62,26 +68,11 @@ class _RadarScreenState extends State<RadarScreen> with SingleTickerProviderStat
       'vehicle': 'Camioneta Nissan Frontier - EP-209',
       'status': 'Patrullando',
       'signal': 'Excelente',
-      'latOffset': -80.0,
-      'lngOffset': -60.0,
+      'lat': -12.120,
+      'lng': -77.025,
       'isSos': false,
     },
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    _radarAnimCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _radarAnimCtrl.dispose();
-    super.dispose();
-  }
 
   List<Map<String, dynamic>> get _filteredPatrols {
     if (_selectedFilter == 'Patrullas') {
@@ -93,271 +84,378 @@ class _RadarScreenState extends State<RadarScreen> with SingleTickerProviderStat
     return _patrols;
   }
 
+  void _centerMapOn(double lat, double lng, {double zoom = 16.0}) {
+    _mapController.move(LatLng(lat, lng), zoom);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Tokens de diseño Liquid Glass
+    final cardBgColor = isDark
+        ? const Color(0xFF0F172A).withValues(alpha: 0.85)
+        : Colors.white.withValues(alpha: 0.9);
+
+    final cardBorderColor = isDark
+        ? const Color(0xFF1E293B).withValues(alpha: 0.8)
+        : const Color(0xFFE2E8F0);
+
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final subTextColor = isDark ? Colors.grey[400]! : const Color(0xFF475569);
+
+    final shadowColor = isDark
+        ? const Color(0xFF00F2FF).withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.08);
+
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Fondo de mapa futurista/radar
+          // 1. Mapa de Flutter interactivo con estilo minimalista grisáceo
           Positioned.fill(
-            child: Container(
-              color: const Color(0xFF070B19),
-              child: AnimatedBuilder(
-                animation: _radarAnimCtrl,
-                builder: (context, child) {
-                  return CustomPaint(
-                    painter: _RadarBackgroundPainter(
-                      sweepAngle: _radarAnimCtrl.value * 2 * math.pi,
-                    ),
-                  );
-                },
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: _initialCenter,
+                initialZoom: 14.5,
+                minZoom: 12.0,
+                maxZoom: 18.0,
               ),
+              children: [
+                TileLayer(
+                  urlTemplate: isDark
+                      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                  subdomains: const ['a', 'b', 'c', 'd'],
+                  userAgentPackageName: 'pe.surquillo.serenazgo_app',
+                ),
+                MarkerLayer(
+                  markers: _filteredPatrols.map((patrol) {
+                    final isSos = patrol['isSos'] as bool;
+                    final isSelected = _selectedPatrol?['id'] == patrol['id'];
+                    final lat = patrol['lat'] as double;
+                    final lng = patrol['lng'] as double;
+
+                    return Marker(
+                      point: LatLng(lat, lng),
+                      width: 60.0,
+                      height: 60.0,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedPatrol = patrol;
+                          });
+                          _centerMapOn(lat, lng, zoom: 16.0);
+                        },
+                        child: _MarkerWidget(
+                          isSos: isSos,
+                          isSelected: isSelected,
+                          name: patrol['id'] as String,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
           ),
 
-          // 2. Marcadores dinámicos e interactivos en el mapa
-          Positioned.fill(
-            child: _buildMarkersLayer(theme),
+          // 2. Brújula y Botón de Recetear Vista en Esquina Derecha
+          Positioned(
+            top: 80,
+            right: 16,
+            child: Column(
+              children: [
+                _buildCircularActionButton(
+                  theme,
+                  isDark,
+                  cardBgColor,
+                  cardBorderColor,
+                  textColor,
+                  Iconsax.gps,
+                  onTap: () {
+                    setState(() {
+                      _selectedPatrol = null;
+                    });
+                    _centerMapOn(_initialCenter.latitude, _initialCenter.longitude, zoom: 14.5);
+                  },
+                ),
+              ],
+            ),
           ),
 
-          // 3. Filtros superiores
+          // 3. Filtros superiores adaptativos
           Positioned(
             top: 16,
             left: 16,
             right: 16,
-            child: _buildTopFilters(theme),
+            child: _buildTopFilters(theme, isDark, cardBgColor, cardBorderColor, textColor),
           ),
 
-          // 4. Panel inferior de detalle (Glassmorphic)
+          // 4. Panel inferior de detalle / resumen (Glassmorphic)
           if (_selectedPatrol != null)
             Positioned(
               bottom: 16,
               left: 16,
               right: 16,
-              child: _buildDetailCard(theme),
+              child: _buildDetailCard(theme, isDark, cardBgColor, cardBorderColor, textColor, subTextColor, shadowColor),
             )
           else
             Positioned(
               bottom: 24,
               left: 16,
               right: 16,
-              child: _buildMapStatsOverview(theme),
+              child: _buildMapStatsOverview(theme, isDark, cardBgColor, cardBorderColor, textColor, subTextColor),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildTopFilters(ThemeData theme) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A).withOpacity(0.85),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF1E293B)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: ['Todos', 'Patrullas', 'SOS'].map((filter) {
-          final isSelected = _selectedFilter == filter;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedFilter = filter;
-                  _selectedPatrol = null;
-                });
-              },
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-                decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF00F2FF).withOpacity(0.15) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                  border: isSelected ? Border.all(color: const Color(0xFF00F2FF).withOpacity(0.5)) : null,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  filter,
-                  style: TextStyle(
-                    color: isSelected ? const Color(0xFF00F2FF) : Colors.grey[400],
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildMarkersLayer(ThemeData theme) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final center = Offset(constraints.maxWidth / 2, constraints.maxHeight / 2);
-        
-        return Stack(
-          children: _filteredPatrols.map((patrol) {
-            final x = center.dx + (patrol['lngOffset'] as double);
-            final y = center.dy + (patrol['latOffset'] as double);
-            final isSos = patrol['isSos'] as bool;
-            final isSelected = _selectedPatrol?['id'] == patrol['id'];
-
-            return Positioned(
-              left: x - 24,
-              top: y - 24,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedPatrol = patrol;
-                  });
-                },
-                child: _MarkerWidget(
-                  isSos: isSos,
-                  isSelected: isSelected,
-                  name: patrol['id'] as String,
-                ),
-              ),
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
-
-  Widget _buildDetailCard(ThemeData theme) {
-    final isSos = _selectedPatrol!['isSos'] as bool;
-    
+  Widget _buildCircularActionButton(
+    ThemeData theme,
+    bool isDark,
+    Color cardBgColor,
+    Color cardBorderColor,
+    Color textColor,
+    IconData icon, {
+    required VoidCallback onTap,
+  }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A).withOpacity(0.9),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isSos ? Colors.red.withOpacity(0.5) : const Color(0xFF1E293B),
-          width: 1.5,
-        ),
+        color: cardBgColor,
+        shape: BoxShape.circle,
+        border: Border.all(color: cardBorderColor, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: (isSos ? Colors.red : const Color(0xFF00F2FF)).withOpacity(0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                // Avatar
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: isSos ? Colors.red.withOpacity(0.1) : const Color(0xFF00F2FF).withOpacity(0.1),
-                  child: Icon(
-                    isSos ? Iconsax.danger : Iconsax.personalcard,
-                    color: isSos ? Colors.red : const Color(0xFF00F2FF),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _selectedPatrol!['name'] as String,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        _selectedPatrol!['sereno'] as String,
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Botón cerrar
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.grey, size: 20),
-                  onPressed: () {
+      child: IconButton(
+        icon: Icon(icon, color: theme.colorScheme.primary, size: 20),
+        onPressed: onTap,
+      ),
+    );
+  }
+
+  Widget _buildTopFilters(
+    ThemeData theme,
+    bool isDark,
+    Color cardBgColor,
+    Color cardBorderColor,
+    Color textColor,
+  ) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: cardBgColor,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: cardBorderColor, width: 1.2),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: ['Todos', 'Patrullas', 'SOS'].map((filter) {
+              final isSelected = _selectedFilter == filter;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () {
                     setState(() {
+                      _selectedFilter = filter;
                       _selectedPatrol = null;
                     });
                   },
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(color: Color(0xFF1E293B)),
-            const SizedBox(height: 12),
-            _buildDetailRow(Iconsax.routing, 'Zona / Sector', _selectedPatrol!['sector'] as String),
-            _buildDetailRow(Iconsax.truck, 'Vehículo', _selectedPatrol!['vehicle'] as String),
-            _buildDetailRow(Iconsax.status, 'Estado actual', _selectedPatrol!['status'] as String),
-            _buildDetailRow(Iconsax.wifi, 'Señal GPS', _selectedPatrol!['signal'] as String,
-                color: isSos ? Colors.red : Colors.green),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Iconsax.call, size: 18),
-                    label: const Text('Llamar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E293B),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                      border: isSelected
+                          ? Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.5))
+                          : null,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      filter,
+                      style: TextStyle(
+                        color: isSelected ? theme.colorScheme.primary : textColor.withValues(alpha: 0.7),
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Iconsax.message_2, size: 18),
-                    label: const Text('Despachar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isSos ? Colors.red : const Color(0xFF00F2FF),
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value, {Color? color}) {
+  Widget _buildDetailCard(
+    ThemeData theme,
+    bool isDark,
+    Color cardBgColor,
+    Color cardBorderColor,
+    Color textColor,
+    Color subTextColor,
+    Color shadowColor,
+  ) {
+    final isSos = _selectedPatrol!['isSos'] as bool;
+    
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: cardBgColor,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isSos ? Colors.redAccent.withValues(alpha: 0.7) : cardBorderColor,
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: shadowColor,
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: isSos
+                          ? Colors.red.withValues(alpha: 0.1)
+                          : theme.colorScheme.primary.withValues(alpha: 0.1),
+                      child: Icon(
+                        isSos ? Iconsax.danger : Iconsax.personalcard,
+                        color: isSos ? Colors.redAccent : theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _selectedPatrol!['name'] as String,
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            _selectedPatrol!['sereno'] as String,
+                            style: TextStyle(
+                              color: subTextColor,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close_rounded, color: subTextColor, size: 20),
+                      onPressed: () {
+                        setState(() {
+                          _selectedPatrol = null;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Divider(color: cardBorderColor),
+                const SizedBox(height: 12),
+                _buildDetailRow(textColor, subTextColor, Iconsax.routing, 'Zona / Sector', _selectedPatrol!['sector'] as String),
+                _buildDetailRow(textColor, subTextColor, Iconsax.truck, 'Vehículo', _selectedPatrol!['vehicle'] as String),
+                _buildDetailRow(textColor, subTextColor, Iconsax.status, 'Estado actual', _selectedPatrol!['status'] as String),
+                _buildDetailRow(textColor, subTextColor, Iconsax.wifi, 'Señal GPS', _selectedPatrol!['signal'] as String,
+                    color: isSos ? Colors.redAccent : Colors.green),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Iconsax.call, size: 18),
+                        label: const Text('Llamar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                          foregroundColor: textColor,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          elevation: 0,
+                          side: BorderSide(color: cardBorderColor, width: 0.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Iconsax.message_2, size: 18),
+                        label: const Text('Despachar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isSos ? Colors.redAccent : theme.colorScheme.primary,
+                          foregroundColor: isSos ? Colors.white : Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    Color textColor,
+    Color subTextColor,
+    IconData icon,
+    String label,
+    String value, {
+    Color? color,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey[500], size: 16),
+          Icon(icon, color: subTextColor.withValues(alpha: 0.7), size: 16),
           const SizedBox(width: 8),
-          Text('$label: ', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+          Text('$label: ', style: TextStyle(color: subTextColor, fontSize: 12)),
           Expanded(
             child: Text(
               value,
               style: TextStyle(
-                color: color ?? Colors.white,
+                color: color ?? textColor,
                 fontWeight: FontWeight.w500,
                 fontSize: 12,
               ),
@@ -369,34 +467,47 @@ class _RadarScreenState extends State<RadarScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildMapStatsOverview(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A).withOpacity(0.85),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF1E293B)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem('3', 'Patrullas Activas', const Color(0xFF00F2FF)),
-          Container(width: 1, height: 30, color: const Color(0xFF1E293B)),
-          _buildStatItem('1', 'Emergencias SOS', Colors.red),
-          Container(width: 1, height: 30, color: const Color(0xFF1E293B)),
-          _buildStatItem('Sector 03', 'Tu Cobertura', Colors.green),
-        ],
+  Widget _buildMapStatsOverview(
+    ThemeData theme,
+    bool isDark,
+    Color cardBgColor,
+    Color cardBorderColor,
+    Color textColor,
+    Color subTextColor,
+  ) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cardBgColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: cardBorderColor, width: 1.2),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem('3', 'Patrullas Activas', theme.colorScheme.primary, subTextColor),
+              Container(width: 1, height: 30, color: cardBorderColor),
+              _buildStatItem('1', 'Emergencias SOS', Colors.redAccent, subTextColor),
+              Container(width: 1, height: 30, color: cardBorderColor),
+              _buildStatItem('Sector 03', 'Tu Cobertura', Colors.green, subTextColor),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildStatItem(String val, String label, Color col) {
+  Widget _buildStatItem(String val, String label, Color col, Color subTextColor) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(val, style: TextStyle(color: col, fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+        Text(label, style: TextStyle(color: subTextColor, fontSize: 11)),
       ],
     );
   }
@@ -440,7 +551,7 @@ class _MarkerWidgetState extends State<_MarkerWidget> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.isSos ? Colors.red : const Color(0xFF00F2FF);
+    final baseColor = widget.isSos ? Colors.redAccent : const Color(0xFF00F2FF);
 
     return AnimatedBuilder(
       animation: _pulseCtrl,
@@ -453,7 +564,7 @@ class _MarkerWidgetState extends State<_MarkerWidget> with SingleTickerProviderS
               width: 48 * (1 + _pulseCtrl.value * 0.4),
               height: 48 * (1 + _pulseCtrl.value * 0.4),
               decoration: BoxDecoration(
-                color: baseColor.withOpacity(0.25 * (1 - _pulseCtrl.value)),
+                color: baseColor.withValues(alpha: 0.25 * (1 - _pulseCtrl.value)),
                 shape: BoxShape.circle,
               ),
             ),
@@ -470,7 +581,7 @@ class _MarkerWidgetState extends State<_MarkerWidget> with SingleTickerProviderS
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: baseColor.withOpacity(0.5),
+                    color: baseColor.withValues(alpha: 0.5),
                     blurRadius: 10,
                   ),
                 ],
@@ -487,71 +598,5 @@ class _MarkerWidgetState extends State<_MarkerWidget> with SingleTickerProviderS
         );
       },
     );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// PAINTER DE RADAR DE ALTO RENDIMIENTO
-// ─────────────────────────────────────────────────────────────
-class _RadarBackgroundPainter extends CustomPainter {
-  final double sweepAngle;
-
-  _RadarBackgroundPainter({required this.sweepAngle});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = math.min(size.width, size.height) * 0.8;
-
-    final ringPaint = Paint()
-      ..color = const Color(0xFF00F2FF).withOpacity(0.06)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    final sweepPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0xFF00F2FF).withOpacity(0.12),
-          const Color(0xFF00F2FF).withOpacity(0.02),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(center: center, radius: maxRadius));
-
-    // 1. Dibujar círculos concéntricos
-    for (int i = 1; i <= 4; i++) {
-      canvas.drawCircle(center, (maxRadius / 4) * i, ringPaint);
-    }
-
-    // 2. Dibujar líneas de cuadrícula cruzadas
-    final gridPaint = Paint()
-      ..color = const Color(0xFF00F2FF).withOpacity(0.04)
-      ..strokeWidth = 1.0;
-    canvas.drawLine(Offset(0, center.dy), Offset(size.width, center.dy), gridPaint);
-    canvas.drawLine(Offset(center.dx, 0), Offset(center.dx, size.height), gridPaint);
-
-    // 3. Barrido radial
-    final rect = Rect.fromCircle(center: center, radius: maxRadius);
-    canvas.drawArc(
-      rect,
-      sweepAngle - 0.5,
-      0.5,
-      true,
-      sweepPaint,
-    );
-
-    // 4. Puntos aleatorios decorativos como "ecos de radar"
-    final randomPointsPaint = Paint()
-      ..color = const Color(0xFF00F2FF).withOpacity(0.3)
-      ..style = PaintingStyle.fill;
-    
-    // Mocks estáticos de señalización de radar
-    canvas.drawCircle(center + const Offset(-100, -80), 2, randomPointsPaint);
-    canvas.drawCircle(center + const Offset(120, 150), 3, randomPointsPaint);
-    canvas.drawCircle(center + const Offset(70, -180), 2, randomPointsPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _RadarBackgroundPainter oldDelegate) {
-    return oldDelegate.sweepAngle != sweepAngle;
   }
 }

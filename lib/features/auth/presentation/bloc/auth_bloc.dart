@@ -12,46 +12,92 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LoginRequested>(_onLoginRequested);
     on<LogoutRequested>(_onLogoutRequested);
     on<CheckAuthStatus>(_onCheckAuthStatus);
+    on<UpdateProfileRequested>(_onUpdateProfileRequested);
   }
 
-  void _onCheckAuthStatus(CheckAuthStatus event, Emitter<AuthState> emit) {
+  Future<void> _onCheckAuthStatus(CheckAuthStatus event, Emitter<AuthState> emit) async {
     final session = supabase.auth.currentSession;
     if (session != null) {
-      // Extraer el DNI del correo sintético (dni@surquillo.pe)
       final dni = session.user.email?.split('@').first ?? 'Desconocido';
-      emit(AuthAuthenticated(dni: dni));
+      
+      try {
+        final profileData = await supabase
+            .from('profiles')
+            .select()
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+        if (profileData != null) {
+          emit(AuthAuthenticated(
+            dni: dni,
+            fullName: profileData['full_name'] ?? 'Usuario',
+            avatarUrl: profileData['avatar_url'],
+            role: profileData['role'] ?? 'SERENO',
+            sector: profileData['sector'] ?? 'Sector 03',
+          ));
+        } else {
+          emit(AuthAuthenticated(
+            dni: dni,
+            fullName: 'Usuario',
+            role: 'SERENO',
+            sector: 'Sector 03',
+          ));
+        }
+      } catch (e) {
+        // Fallback offline
+        emit(AuthAuthenticated(
+          dni: dni,
+          fullName: 'Usuario (Offline)',
+          role: 'SERENO',
+          sector: 'Sector 03',
+        ));
+      }
     } else {
       emit(AuthUnauthenticated());
     }
   }
 
-  void _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
+  Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      // Mapeo sintético de DNI a Email para "Fricción Cero"
       final syntheticEmail = '${event.dni}@surquillo.pe';
       
-      print('=== DEBUG LOGIN ===');
-      print('Intentando login con Email exacto: "$syntheticEmail"');
-      print('PIN exacto: "${event.pin}"');
-      print('===================');
-
       final response = await supabase.auth.signInWithPassword(
         email: syntheticEmail,
         password: event.pin,
       );
 
       if (response.user != null) {
-        emit(AuthAuthenticated(dni: event.dni));
+        final profileData = await supabase
+            .from('profiles')
+            .select()
+            .eq('id', response.user!.id)
+            .maybeSingle();
+
+        if (profileData != null) {
+          emit(AuthAuthenticated(
+            dni: event.dni,
+            fullName: profileData['full_name'] ?? 'Usuario',
+            avatarUrl: profileData['avatar_url'],
+            role: profileData['role'] ?? 'SERENO',
+            sector: profileData['sector'] ?? 'Sector 03',
+          ));
+        } else {
+          emit(AuthAuthenticated(
+            dni: event.dni,
+            fullName: 'Usuario',
+            role: 'SERENO',
+            sector: 'Sector 03',
+          ));
+        }
       } else {
         emit(const AuthError(message: 'DNI o PIN incorrecto'));
       }
     } catch (e) {
-      // Si el error es de credenciales, mostrar mensaje amigable
       if (e.toString().contains('Invalid login credentials')) {
-         emit(const AuthError(message: 'DNI o PIN incorrecto. Intente de nuevo.'));
+        emit(const AuthError(message: 'DNI o PIN incorrecto. Intente de nuevo.'));
       } else {
-         emit(AuthError(message: 'Error de conexión: \${e.toString()}'));
+        emit(AuthError(message: 'Error de conexión: ${e.toString()}'));
       }
     }
   }
@@ -59,5 +105,34 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   void _onLogoutRequested(LogoutRequested event, Emitter<AuthState> emit) async {
     await supabase.auth.signOut();
     emit(AuthUnauthenticated());
+  }
+
+  Future<void> _onUpdateProfileRequested(UpdateProfileRequested event, Emitter<AuthState> emit) async {
+    final currentState = state;
+    if (currentState is AuthAuthenticated) {
+      try {
+        final userId = supabase.auth.currentUser?.id;
+        if (userId != null) {
+          final updates = {
+            'full_name': event.fullName,
+            if (event.avatarUrl != null) 'avatar_url': event.avatarUrl,
+          };
+          
+          await supabase.from('profiles').update(updates).eq('id', userId);
+
+          emit(AuthAuthenticated(
+            dni: currentState.dni,
+            fullName: event.fullName,
+            avatarUrl: event.avatarUrl ?? currentState.avatarUrl,
+            role: currentState.role,
+            sector: currentState.sector,
+          ));
+        }
+      } catch (e) {
+        emit(AuthError(message: 'No se pudo actualizar el perfil: ${e.toString()}'));
+        // Restore state to avoid blanking out the UI
+        emit(currentState);
+      }
+    }
   }
 }

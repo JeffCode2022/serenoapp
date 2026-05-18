@@ -5,6 +5,7 @@ class WhatsAppFormatter {
     required String lugar,
     required String jefeOperaciones,
     required String supervisorZona,
+    required String apoloJefeZona,
     required String novedad,
     required String apoyo,
   }) {
@@ -17,6 +18,7 @@ class WhatsAppFormatter {
 📍 *Zona:* $moduloSector
 *Lugar:* $lugar
 🧑💼 *Jefe de Operaciones:* $jefeOperaciones
+👮‍♂️ *Apolo (Jefe de Zona):* $apoloJefeZona
 👔 *Supervisor de Zona:* $supervisorZona
 
 📝 *Novedad:*
@@ -29,7 +31,20 @@ $apoyo
   }
 
   static String _mes(int m) {
-    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const meses = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre'
+    ];
     return meses[m - 1];
   }
 }

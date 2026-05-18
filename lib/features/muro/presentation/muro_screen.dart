@@ -128,10 +128,13 @@ class PostCard extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, ThemeData theme) {
+    final avatarUrl = post.author?.avatarUrl;
     return Row(
       children: [
         CircleAvatar(
-          backgroundImage: const AssetImage('assets/images/default_user.png'),
+          backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+              ? NetworkImage(avatarUrl) as ImageProvider
+              : const AssetImage('assets/images/default_user.png'),
           backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
           radius: 20,
         ),

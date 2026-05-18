@@ -7,6 +7,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../domain/models/attachment_model.dart';
 import '../bloc/muro_bloc.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 
 /// Modal de creación de publicación con soporte de múltiples adjuntos.
 class CreatePostModal extends StatefulWidget {
@@ -122,12 +123,20 @@ class _CreatePostModalState extends State<CreatePostModal>
   }
 
   Widget _buildHeader(BuildContext context, ThemeData theme) {
+    final authState = context.read<AuthBloc>().state;
+    String? avatarUrl;
+    if (authState is AuthAuthenticated) {
+      avatarUrl = authState.avatarUrl;
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(
         children: [
-          const CircleAvatar(
-            backgroundImage: AssetImage('assets/images/default_user.png'),
+          CircleAvatar(
+            backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                ? NetworkImage(avatarUrl) as ImageProvider
+                : const AssetImage('assets/images/default_user.png'),
             radius: 20,
           ),
           const SizedBox(width: 12),

@@ -45,7 +45,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               child: Hero(
                 tag: 'user-avatar',
                 child: CircleAvatar(
-                  backgroundImage: const AssetImage('assets/images/default_user.png'),
+                  backgroundImage: (state is AuthAuthenticated && state.avatarUrl != null && state.avatarUrl!.isNotEmpty)
+                      ? NetworkImage(state.avatarUrl!) as ImageProvider
+                      : const AssetImage('assets/images/default_user.png'),
                   backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                 ),
               ),

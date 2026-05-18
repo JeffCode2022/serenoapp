@@ -20,3 +20,16 @@ class LoginRequested extends AuthEvent {
 }
 
 class LogoutRequested extends AuthEvent {}
+
+class UpdateProfileRequested extends AuthEvent {
+  final String fullName;
+  final String? avatarUrl;
+
+  const UpdateProfileRequested({
+    required this.fullName,
+    this.avatarUrl,
+  });
+
+  @override
+  List<Object?> get props => [fullName, avatarUrl];
+}

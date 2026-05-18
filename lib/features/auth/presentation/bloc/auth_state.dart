@@ -13,11 +13,21 @@ class AuthLoading extends AuthState {}
 
 class AuthAuthenticated extends AuthState {
   final String dni;
+  final String fullName;
+  final String? avatarUrl;
+  final String role;
+  final String sector;
   
-  const AuthAuthenticated({required this.dni});
+  const AuthAuthenticated({
+    required this.dni,
+    required this.fullName,
+    this.avatarUrl,
+    required this.role,
+    required this.sector,
+  });
   
   @override
-  List<Object?> get props => [dni];
+  List<Object?> get props => [dni, fullName, avatarUrl, role, sector];
 }
 
 class AuthUnauthenticated extends AuthState {}
